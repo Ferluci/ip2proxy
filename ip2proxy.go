@@ -5,6 +5,7 @@
 package ip2proxy
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -19,6 +20,14 @@ import (
 type DBReader interface {
 	io.ReadCloser
 	io.ReaderAt
+}
+
+type InMemoryDBReader struct {
+	*bytes.Reader
+}
+
+func (r *InMemoryDBReader) Close() error {
+	return nil
 }
 
 type databaseMeta struct {
@@ -291,6 +300,33 @@ func fatal(db *DB, err error) (*DB, error) {
 	return nil, err
 }
 
+
+// OpenInMemoryDB takes the path to the IP2Proxy BIN database file. It will read all file data
+// and return the underlining DB object.
+func OpenInMemoryDB(dbpath string) (*DB, error) {
+	dbFile, err := os.Open(dbpath)
+	defer dbFile.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := dbFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// calculate the bytes size
+	var size = info.Size()
+	fileData := make([]byte, size)
+
+	// read into buffer
+	buffer := bufio.NewReader(dbFile)
+	_, err = buffer.Read(fileData)
+
+	return OpenDBWithReader(&InMemoryDBReader{bytes.NewReader(fileData)})
+}
+
 // OpenDB takes the path to the IP2Proxy BIN database file. It will read all the metadata required to
 // be able to extract the embedded proxy data, and return the underlining DB object.
 func OpenDB(dbpath string) (*DB, error) {
@@ -546,10 +582,22 @@ func (d *DB) GetThreat(ipaddress string) (string, error) {
 	return data.Threat, err
 }
 
-// IsProxy checks whether the queried IP address was a proxy. Returned value: -1 (errors), 0 (not a proxy), 1 (a proxy), 2 (a data center IP address or search engine robot).
-func (d *DB) IsProxy(ipaddress string) (int8, error) {
+// GetShort will return: -1 (errors), 0 (not a proxy), 1 (a proxy), 2 (a data center IP address or search engine robot).
+func (d *DB) GetShort(ipaddress string) (int8, error) {
 	data, err := d.query(ipaddress, isProxy)
 	return data.IsProxy, err
+}
+
+// IsProxy checks whether the queried IP address was a proxy.
+func (d *DB) IsProxy(ipaddress string) (bool, error) {
+	data, err := d.query(ipaddress, isProxy)
+	if err != nil {
+		return false, err
+	}
+	if data.IsProxy > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 // main query

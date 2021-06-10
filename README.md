@@ -28,7 +28,8 @@ Below are the methods supported in this package.
 |PackageVersion|Get the package version (1 to 10 for PX1 to PX10 respectively).|
 |ModuleVersion|Get the module version.|
 |DatabaseVersion|Get the database version.|
-|IsProxy|Check whether if an IP address was a proxy. Returned value:<ul><li>-1 : errors</li><li>0 : not a proxy</li><li>1 : a proxy</li><li>2 : a data center IP address or search engine robot</li></ul>|
+|GetShort|Returned value:<ul><li>-1 : errors</li><li>0 : not a proxy</li><li>1 : a proxy</li><li>2 : a data center IP address or search engine robot</li></ul>|
+|IsProxy|Check whether if an IP address was a proxy.|
 |GetAll|Return the proxy information in an array.|
 |GetProxyType|Return the proxy type. Please visit <a href="https://www.ip2location.com/database/px10-ip-proxytype-country-region-city-isp-domain-usagetype-asn-lastseen-threat-residential" target="_blank">IP2Location</a> for the list of proxy types supported.|
 |GetCountryShort|Return the ISO3166-1 country code (2-digits) of the proxy.|
@@ -43,6 +44,32 @@ Below are the methods supported in this package.
 |GetLastSeen|Return the number of days that the proxy was last seen.|
 |GetThreat|Return the threat type of the proxy.|
 
+## InMemory Usage
+```
+package main
+
+import (
+	"fmt"
+	"github.com/Ferluci/ip2proxy"
+)
+
+func main() {
+	db, err := ip2proxy.OpenInMemoryDB("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL.BIN")
+	
+	if err != nil {
+		return
+	}
+	ip := "8.8.8.8"
+	isProxy, err := db.IsProxy(ip)
+	
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+	fmt.Println(isProxy)
+}
+```
+
 ## Usage
 
 ```go
@@ -50,7 +77,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ip2location/ip2proxy-go"
+	"github.com/Ferluci/ip2proxy"
 )
 
 func main() {
