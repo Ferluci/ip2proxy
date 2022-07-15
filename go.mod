@@ -1,3 +1,3 @@
-module github.com/Ferluci/ip2proxy
+module github.com/ferluci/ip2proxy
 
 go 1.14
